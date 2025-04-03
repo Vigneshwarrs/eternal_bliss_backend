@@ -14,14 +14,6 @@ const userSubscribedSchema = new mongoose_1.default.Schema({
     subscribed: {
         type: Boolean,
         default: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
     }
-});
+}, { timestamps: true });
 exports.UserSubscribed = mongoose_1.default.model('UserSubscribed', userSubscribedSchema);

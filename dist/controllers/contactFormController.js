@@ -9,9 +9,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllContactForms = exports.createContactForm = void 0;
+exports.createContactForm = createContactForm;
+exports.getAllContactForms = getAllContactForms;
 const contactForm_1 = require("../models/contactForm");
 const zod_1 = require("zod");
+const apiResponse_1 = require("../utils/apiResponse");
+const consts_1 = require("../utils/consts");
 const validateContactForm = zod_1.z.object({
     name: zod_1.z.string(),
     email: zod_1.z.string().email(),
@@ -21,40 +24,36 @@ const validateContactForm = zod_1.z.object({
     service: zod_1.z.string(),
     message: zod_1.z.string(),
 });
-const createContactForm = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const result = validateContactForm.safeParse(req.body);
-        console.log(result);
-        if (!result.success) {
-            console.log(result.error);
-            return res.status(400).json({ error: result });
+function createContactForm(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const result = validateContactForm.safeParse(req.body);
+            if (!result.success) {
+                console.log(result.error);
+                res.status(400).json({ error: result });
+                return;
+            }
+            const contactForm = new contactForm_1.ContactForm(req.body);
+            yield contactForm.save();
+            (0, apiResponse_1.successResponse)(res, { message: 'Contact form submitted successfully' }, 201);
         }
-        const existingContactForm = yield contactForm_1.ContactForm.findOne({
-            email: req.body.email,
-            createdAt: { $gte: new Date(Date.now() - 60 * 1000) }, // 1-minute limit
-        });
-        if (existingContactForm) {
-            console.log('You can only submit once per minute');
-            return res.status(429).json({ error: 'You can only submit once per minute' });
+        catch (error) {
+            console.error('Error creating contact form:', error);
+            (0, apiResponse_1.errorResponse)(res, consts_1.SERVER_ERROR, 500);
         }
-        const contactForm = new contactForm_1.ContactForm(req.body);
-        yield contactForm.save();
-        res.status(201).json({ message: 'Contact form submitted successfully' });
-    }
-    catch (error) {
-        console.error('Error creating contact form:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-exports.createContactForm = createContactForm;
-const getAllContactForms = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const contactForms = yield contactForm_1.ContactForm.find();
-        res.status(200).json(contactForms);
-    }
-    catch (error) {
-        console.error('Error fetching contact forms:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-exports.getAllContactForms = getAllContactForms;
+    });
+}
+;
+function getAllContactForms(res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const contactForms = yield contactForm_1.ContactForm.find();
+            (0, apiResponse_1.successResponse)(res, contactForms, 200);
+        }
+        catch (error) {
+            console.error('Error fetching contact forms:', error);
+            (0, apiResponse_1.errorResponse)(res, consts_1.SERVER_ERROR, 500);
+        }
+    });
+}
+;

@@ -9,44 +9,50 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createUserSubscribed = exports.getAllUserSubscribed = void 0;
+exports.createUserSubscribed = createUserSubscribed;
+exports.getAllUserSubscribed = getAllUserSubscribed;
 const userSubscribed_1 = require("../models/userSubscribed");
 const zod_1 = require("zod");
+const apiResponse_1 = require("../utils/apiResponse");
+const consts_1 = require("../utils/consts");
 const validateUserSubscribed = zod_1.z.object({
     email: zod_1.z.string().email()
 });
-const getAllUserSubscribed = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const userSubscribed = yield userSubscribed_1.UserSubscribed.find();
-        res.status(200).json(userSubscribed);
-    }
-    catch (error) {
-        console.error('Error getting user subscribed:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-exports.getAllUserSubscribed = getAllUserSubscribed;
-const createUserSubscribed = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const result = validateUserSubscribed.safeParse(req.body);
-        console.log(result);
-        if (!result.success) {
-            console.log(result.error);
-            return res.status(400).json({ error: result });
+function createUserSubscribed(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const result = validateUserSubscribed.safeParse(req.body);
+            console.log(result);
+            if (!result.success) {
+                (0, apiResponse_1.errorResponse)(res, result.error.issues[0].message, 400);
+                return;
+            }
+            const existingUserSubscribed = yield userSubscribed_1.UserSubscribed.findOne({ email: req.body.email });
+            if (existingUserSubscribed) {
+                console.log('User already subscribed');
+                return;
+            }
+            const userSubscribed = new userSubscribed_1.UserSubscribed(req.body);
+            yield userSubscribed.save();
+            (0, apiResponse_1.successResponse)(res, { message: 'User subscribed successfully' }, 201);
         }
-        const existingUserSubscribed = yield userSubscribed_1.UserSubscribed.findOne({ email: req.body.email });
-        if (existingUserSubscribed) {
-            console.log('User already subscribed');
-            return;
-            // return res.status(409).json({ error: 'User already subscribed' });
+        catch (error) {
+            console.error('Error creating user subscribed:', error);
+            (0, apiResponse_1.errorResponse)(res, consts_1.SERVER_ERROR, 500);
         }
-        const userSubscribed = new userSubscribed_1.UserSubscribed(req.body);
-        yield userSubscribed.save();
-        res.status(201).json({ message: 'User subscribed successfully' });
-    }
-    catch (error) {
-        console.error('Error creating user subscribed:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-exports.createUserSubscribed = createUserSubscribed;
+    });
+}
+;
+function getAllUserSubscribed(res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const userSubscribed = yield userSubscribed_1.UserSubscribed.find();
+            (0, apiResponse_1.successResponse)(res, userSubscribed, 200);
+        }
+        catch (error) {
+            console.error('Error getting user subscribed:', error);
+            (0, apiResponse_1.errorResponse)(res, consts_1.SERVER_ERROR, 500);
+        }
+    });
+}
+;

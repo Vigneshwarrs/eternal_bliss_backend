@@ -1,14 +1,17 @@
 import express from 'express';
 import cors from 'cors';
-import './config/db';
+import db from './config/db';
 import { createContactForm, getAllContactForms } from './controllers/contactFormController';
 import { createUserSubscribed, getAllUserSubscribed } from './controllers/userSubscribedController';
 import bodyParser from 'body-parser';
 import { errorHandler } from './utils/errorHandler';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import { configDotenv } from 'dotenv';
 
+configDotenv();
 
+db();
 const app = express();
 const contactFormLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
